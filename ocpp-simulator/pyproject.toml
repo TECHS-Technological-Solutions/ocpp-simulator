@@ -8,6 +8,8 @@ authors = ["ViCt0r99 <wiktor.jan999@gmail.com>"]
 python = "^3.9"
 typer = "^0.6.1"
 questionary = "^1.10.0"
+websockets = "^10.3"
+ocpp = "^0.15.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
