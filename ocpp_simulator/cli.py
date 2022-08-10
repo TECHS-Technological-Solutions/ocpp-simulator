@@ -1,43 +1,83 @@
-import random
 import typer
 import questionary
+import websockets
+import asyncio
+
+from cp_management import cp as Cp
 
 app = typer.Typer()
 
 
+async def connect_cp_to_central_system(url_websocket_address: str, cp_serial_number: str) -> Cp.ChargePoint:
+    # Connect to central system
+    ws = await websockets.connect(
+        f'ws://{url_websocket_address}/{cp_serial_number}',
+        subprotocols=['ocpp2.0.1']
+    )
+    cp = Cp.ChargePoint(cp_serial_number, ws)
+    loop = asyncio.get_event_loop()
+    loop.create_task(cp.start())
+
+    # Boot notification
+    typer.secho('Boot notification', fg=typer.colors.BRIGHT_GREEN, bold=True)
+    message = await cp.send_boot_notification()
+    typer.echo(message)
+
+    # Status notification
+    typer.secho('Status notification', fg=typer.colors.BRIGHT_GREEN, bold=True)
+    message = await cp.send_status_notification()
+    typer.echo(message)
+
+    return cp
+
+
+async def send_message(cp, message: str):
+    response = await cp.messages[message](cp)
+    typer.echo(response)
+
+
 @app.command()
 def start():
-    program_continue = typer.confirm("You have just started OCPI app, do you want to continue")
-    if not program_continue:
-        raise typer.Abort()
+    async def _start():
+        # Program initialization
+        program_continue = typer.confirm("You have just started Charge Point simulator, do you want to continue")
+        if not program_continue:
+            raise typer.Abort()
 
-    # Charge point information
-    cp_serial_number = typer.prompt("Enter charge point serial number")
-    central_system_url = typer.prompt("Enter central system URL")
+        # Central system and charge point information
+        cp_serial_number = typer.prompt("Enter charge point serial number")
+        central_system_url = typer.prompt("Enter central system URL")
 
-    # Connection mocking
-    string = "You are connecting to %s charge point via %s"
-    typer.echo(string % (cp_serial_number, central_system_url))
-    # TODO: Random function is just to check functionality of typer command, later we will implement real connection
-    connection = random.choice([True, False])  # nosec
-    if not connection:
-        typer.echo('Connection was unsuccessful. In order to try again you need to call start command.')
-        raise typer.Abort()
+        # Connect to charge point
+        cp = await connect_cp_to_central_system(central_system_url, cp_serial_number)
 
-    answer = questionary.select(
-        "What action do you want to perform: ",
-        choices=[
-            'Quit',
-            'Send an OCPP message'
-        ]
-    ).ask()
+        answer = await questionary.select(
+            "What action do you want to perform: ",
+            choices=[
+                'Send an OCPP message',
+                'Quit'
+            ]
+        ).ask_async()
 
-    if answer == 'Quit':
-        raise typer.Abort()
+        if answer == 'Quit':
+            raise typer.Abort()
 
-    ocpp_message = typer.prompt('Enter your OCPP message')
-    typer.echo(ocpp_message)
+        # Sending messages to particular charge point
+        while True:
+            message = await questionary.select(
+                "What message do you want to send: ",
+                choices=[choice for choice in cp.messages.keys()]
+            ).ask_async()
+
+            await send_message(cp, message)
+
+            stop_sending_messages = typer.confirm("Do you want to send another message?")
+            if not stop_sending_messages:
+                break
+
+    # Make Typer command running in async version
+    asyncio.run(_start())
 
 
 if __name__ == '__main__':
-    app()
+    typer.run(start)
