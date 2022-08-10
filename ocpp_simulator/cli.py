@@ -8,7 +8,7 @@ from cp_management import cp as Cp
 app = typer.Typer()
 
 
-async def connect_to_cp(url_websocket_address: str, cp_serial_number: str) -> Cp.ChargePoint:
+async def connect_cp_to_central_system(url_websocket_address: str, cp_serial_number: str) -> Cp.ChargePoint:
     # Connect to central system
     ws = await websockets.connect(
         f'ws://{url_websocket_address}/{cp_serial_number}',
@@ -49,7 +49,7 @@ def start():
         central_system_url = typer.prompt("Enter central system URL")
 
         # Connect to charge point
-        cp = await connect_to_cp(central_system_url, cp_serial_number)
+        cp = await connect_cp_to_central_system(central_system_url, cp_serial_number)
 
         answer = await questionary.select(
             "What action do you want to perform: ",

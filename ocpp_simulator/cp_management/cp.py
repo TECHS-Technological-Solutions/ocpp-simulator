@@ -649,17 +649,3 @@ class ChargePoint(Cp):
         'Transaction Event': send_transaction_event
 
     }
-
-
-async def main():
-    async with websockets.connect(
-            'ws://localhost:9000/CP_1',
-            subprotocols=['ocpp2.0.1']
-    ) as ws:
-        cp = ChargePoint('CP_1', ws)
-
-        await asyncio.gather(cp.start(), cp.send_boot_notification())
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
