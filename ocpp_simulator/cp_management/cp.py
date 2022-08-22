@@ -2,12 +2,10 @@ import uuid
 import typer
 from hashlib import sha256
 from datetime import datetime, timedelta
-import asyncio
 import logging
-import websockets
 import questionary
+import websockets
 
-import factory
 from faker import Faker
 from ocpp.routing import on
 from ocpp.v201 import ChargePoint as Cp, call, call_result, datatypes, enums
@@ -150,7 +148,9 @@ class ChargePoint(Cp):
                             measurand=value_measurand,
                             phase=None,
                             location=None,
-                            unit_of_measure=unit
+                            unit_of_measure=datatypes.UnitOfMeasureType(
+                                unit=unit
+                            )
                         ),
                         datatypes.SampledValueType(
                             value=value,
@@ -158,7 +158,9 @@ class ChargePoint(Cp):
                             measurand=value_measurand,
                             phase=value_phase,
                             location=None,
-                            unit_of_measure=unit
+                            unit_of_measure=datatypes.UnitOfMeasureType(
+                                unit=unit
+                            )
                         ),
                     ]
                 ),
@@ -171,7 +173,9 @@ class ChargePoint(Cp):
                             measurand=value_measurand,
                             phase=None,
                             location=None,
-                            unit_of_measure=unit
+                            unit_of_measure=datatypes.UnitOfMeasureType(
+                                unit=unit
+                            )
                         ),
                         datatypes.SampledValueType(
                             value=value,
@@ -179,7 +183,9 @@ class ChargePoint(Cp):
                             measurand=value_measurand,
                             phase=value_phase,
                             location=None,
-                            unit_of_measure=unit
+                            unit_of_measure=datatypes.UnitOfMeasureType(
+                                unit=unit
+                            )
                         ),
                     ]
                 ),
@@ -395,9 +401,7 @@ class ChargePoint(Cp):
         return response
 
     async def send_security_event_notification(self):
-        security_event_type = await questionary.select(
-            "Which reservation update status: ",
-            choices=[
+        security_event_type = await ask_question([
                 'FirmwareUpdated',
                 'FailedToAuthenticateAtCsms',
                 'CsmsFailedToAuthenticate',
@@ -416,8 +420,7 @@ class ChargePoint(Cp):
                 'InvalidChargingStationCertificate',
                 'InvalidTLSVersion',
                 'InvalidTLSCipherSuite'
-            ]
-        ).ask_async()
+            ], "Which reservation update status: ")
         request = call.SecurityEventNotificationPayload(
             type=security_event_type,
             timestamp=str(datetime.now())
@@ -452,28 +455,28 @@ class ChargePoint(Cp):
         return response
 
     @on(enums.Action.CancelReservation)
-    async def on_cancel_reservation(self, status=enums.CancelReservationStatusType.accepted):
+    async def on_cancel_reservation(self, status=enums.CancelReservationStatusType.accepted, **kwargs):
         return call_result.CancelReservationPayload(status=status)
 
     @on(enums.Action.CertificateSigned)
-    async def on_certificate_signed(self, status=enums.CertificateSignedStatusType.accepted):
+    async def on_certificate_signed(self, status=enums.CertificateSignedStatusType.accepted, **kwargs):
         return call_result.CertificateSignedPayload(status=status)
 
     @on(enums.Action.ChangeAvailability)
-    async def on_change_availability(self, status=enums.ChangeAvailabilityStatusType.accepted):
+    async def on_change_availability(self, status=enums.ChangeAvailabilityStatusType.accepted, **kwargs):
         return call_result.ChangeAvailabilityPayload(status=status)
 
     @on(enums.Action.ClearChargingProfile)
-    async def on_clear_charging_profile(self, status=enums.ClearChargingProfileStatusType.accepted):
+    async def on_clear_charging_profile(self, status=enums.ClearChargingProfileStatusType.accepted, **kwargs):
         return call_result.ClearChargingProfilePayload(status=status)
 
     @on(enums.Action.ClearDisplayMessage)
-    async def on_clear_display_message(self, status=enums.ClearChargingProfileStatusType.accepted):
+    async def on_clear_display_message(self, status=enums.ClearChargingProfileStatusType.accepted, **kwargs):
         return call_result.ClearDisplayMessagePayload(status=status)
 
     @on(enums.Action.ClearVariableMonitoring)
     async def on_clear_variable_monitoring(self, monitoring_result_id: int = fake.random_int(1, 100),
-                                           status=enums.ClearMonitoringStatusType.accepted):
+                                           status=enums.ClearMonitoringStatusType.accepted, **kwargs):
         return call_result.ClearVariableMonitoringPayload(
             clear_monitoring_result=[{
                 'status': status,
@@ -481,98 +484,98 @@ class ChargePoint(Cp):
             }]
         )
 
-    @on(enums.Action.CostUpdate)
-    async def on_cost_updated(self):
+    @on('CostUpdated')
+    async def on_cost_updated(self, **kwargs):
         return call_result.CostUpdatedPayload()
 
     @on(enums.Action.CustomerInformation)
-    async def on_customer_info(self, status=enums.CustomerInformationStatusType.accepted):
+    async def on_customer_info(self, status=enums.CustomerInformationStatusType.accepted, **kwargs):
         return call_result.CustomerInformationPayload(status=status)
 
     @on(enums.Action.DataTransfer)
-    async def on_data_transfer(self, status=enums.DataTransferStatusType.accepted):
+    async def on_data_transfer(self, status=enums.DataTransferStatusType.accepted, **kwargs):
         return call_result.DataTransferPayload(status=status)
 
     @on(enums.Action.DeleteCertificate)
-    async def on_delete_certificate(self, status=enums.DeleteCertificateStatusType.accepted):
+    async def on_delete_certificate(self, status=enums.DeleteCertificateStatusType.accepted, **kwargs):
         return call_result.DeleteCertificatePayload(status=status)
 
     @on(enums.Action.GetBaseReport)
-    async def on_get_base_report(self, status=enums.GenericDeviceModelStatusType.accepted):
+    async def on_get_base_report(self, status=enums.GenericDeviceModelStatusType.accepted, **kwargs):
         return call_result.GetBaseReportPayload(status=status)
 
     @on(enums.Action.GetChargingProfiles)
-    async def on_get_charging_profiles(self, status=enums.GetChargingProfileStatusType.accepted):
+    async def on_get_charging_profiles(self, status=enums.GetChargingProfileStatusType.accepted, **kwargs):
         return call_result.GetChargingProfilesPayload(status=status)
 
     @on(enums.Action.GetCompositeSchedule)
-    async def on_get_composite_schedule(self, status=enums.GenericStatusType.accepted):
+    async def on_get_composite_schedule(self, status=enums.GenericStatusType.accepted, **kwargs):
         return call_result.GetCompositeSchedulePayload(status=status)
 
     @on(enums.Action.GetDisplayMessages)
-    async def on_get_display_messages(self, status=enums.GetDisplayMessagesStatusType.accepted):
+    async def on_get_display_messages(self, status=enums.GetDisplayMessagesStatusType.accepted, **kwargs):
         return call_result.GetDisplayMessagesPayload(status=status)
 
     @on(enums.Action.GetInstalledCertificateIds)
-    async def on_get_installed_certificate_ids(self, status=enums.GetInstalledCertificateStatusType.accepted):
+    async def on_get_installed_certificate_ids(self, status=enums.GetInstalledCertificateStatusType.accepted, **kwargs):
         return call_result.GetInstalledCertificateIdsPayload(status=status)
 
     @on(enums.Action.GetLocalListVersion)
-    async def on_get_local_list_version(self, version_number: int = fake.random_int(1, 1000)):
+    async def on_get_local_list_version(self, version_number: int = fake.random_int(1, 1000), **kwargs):
         return call_result.GetLocalListVersionPayload(version_number=version_number)
 
     @on(enums.Action.GetLog)
-    async def on_get_log(self, status=enums.LogStatusType.accepted):
+    async def on_get_log(self, status=enums.LogStatusType.accepted, **kwargs):
         return call_result.GetLogPayload(status=status)
 
     @on(enums.Action.GetMonitoringReport)
-    async def on_get_monitoring_report(self, status=enums.InstallCertificateStatusType.accepted):
+    async def on_get_monitoring_report(self, status=enums.InstallCertificateStatusType.accepted, **kwargs):
         return call_result.GetMonitoringReportPayload(status=status)
 
     @on(enums.Action.PublishFirmware)
-    async def on_publish_firmware(self, status=enums.GenericStatusType.accepted):
+    async def on_publish_firmware(self, status=enums.GenericStatusType.accepted, **kwargs):
         return call_result.PublishFirmwarePayload(status=status)
 
     @on(enums.Action.ReserveNow)
-    async def on_reserve_now(self, status=enums.ReserveNowStatusType.accepted):
+    async def on_reserve_now(self, status=enums.ReserveNowStatusType.accepted, **kwargs):
         return call_result.ReserveNowPayload(status=status)
 
     @on(enums.Action.Reset)
-    async def on_reset(self, status=enums.ResetStatusType.accepted):
+    async def on_reset(self, status=enums.ResetStatusType.accepted, **kwargs):
         return call_result.ResetPayload(status=status)
 
     @on(enums.Action.SendLocalList)
-    async def on_send_local_list(self, status=enums.SendLocalListStatusType.accepted):
+    async def on_send_local_list(self, status=enums.SendLocalListStatusType.accepted, **kwargs):
         return call_result.SendLocalListPayload(status=status)
 
     @on(enums.Action.SetChargingProfile)
-    async def on_set_charging_profile(self, status=enums.ChargingProfileStatus.accepted):
+    async def on_set_charging_profile(self, status=enums.ChargingProfileStatus.accepted, **kwargs):
         return call_result.SetChargingProfilePayload(status=status)
 
     @on(enums.Action.SetDisplayMessage)
-    async def on_set_display_message(self, status=enums.DisplayMessageStatusType.accepted):
+    async def on_set_display_message(self, status=enums.DisplayMessageStatusType.accepted, **kwargs):
         return call_result.SetDisplayMessagePayload(status=status)
 
     @on(enums.Action.SetMonitoringBase)
-    async def on_set_monitoring_base(self, status=enums.GenericDeviceModelStatusType.accepted):
+    async def on_set_monitoring_base(self, status=enums.GenericDeviceModelStatusType.accepted, **kwargs):
         return call_result.SetMonitoringBasePayload(status=status)
 
     @on(enums.Action.SetMonitoringLevel)
-    async def on_set_monitoring_level(self, status=enums.GenericStatusType.accepted):
+    async def on_set_monitoring_level(self, status=enums.GenericStatusType.accepted, **kwargs):
         return call_result.SetMonitoringLevelPayload(status=status)
 
     @on(enums.Action.SetNetworkProfile)
-    async def on_set_network_profile(self, status=enums.SetNetworkProfileStatusType.accepted):
+    async def on_set_network_profile(self, status=enums.SetNetworkProfileStatusType.accepted, **kwargs):
         return call_result.SetNetworkProfilePayload(status=status)
 
     @on(enums.Action.SetVariableMonitoring)
     async def on_set_variable_monitoring(self, status=enums.SetMonitoringStatusType.accepted,
                                          monitor_type=enums.MonitorType.delta, severity: int = fake.random_int(0, 10),
-                                         component_name: str = factory.Faker('pystr'),
-                                         component_instance: str = factory.Faker('pystr'),
-                                         variable_name: str = factory.Faker('pystr')):
+                                         component_name: str = fake.pystr(1, 36),
+                                         component_instance: str = fake.pystr(1, 36),
+                                         variable_name: str = fake.pystr(1, 36), **kwargs):
         return call_result.SetVariableMonitoringPayload(
-            set_monitoring_result=datatypes.SetMonitoringResultType(
+            set_monitoring_result=[datatypes.SetMonitoringResultType(
                 status=status,
                 type=monitor_type,
                 severity=severity,
@@ -583,16 +586,16 @@ class ChargePoint(Cp):
                 variable=datatypes.VariableType(
                     name=variable_name
                 )
-            )
+            )]
         )
 
     @on(enums.Action.SetVariables)
     async def on_set_variables(self, status=enums.SetVariableStatusType.accepted,
-                               component_name: str = factory.Faker('pystr'),
-                               component_instance: str = factory.Faker('pystr'),
-                               variable_name: str = factory.Faker('pystr')):
+                               component_name: str = fake.pystr(1, 36),
+                               component_instance: str = fake.pystr(1, 36),
+                               variable_name: str = fake.pystr(1, 36), **kwargs):
         return call_result.SetVariablesPayload(
-            set_variable_result=datatypes.SetVariableResultType(
+            set_variable_result=[datatypes.SetVariableResultType(
                 attribute_status=status,
                 component=datatypes.ComponentType(
                     name=component_name,
@@ -601,23 +604,23 @@ class ChargePoint(Cp):
                 variable=datatypes.VariableType(
                     name=variable_name
                 )
-            )
+            )]
         )
 
     @on(enums.Action.TriggerMessage)
-    async def on_trigger_message(self, status=enums.TriggerMessageStatusType.accepted):
+    async def on_trigger_message(self, status=enums.TriggerMessageStatusType.accepted, **kwargs):
         return call_result.TriggerMessagePayload(status=status)
 
     @on(enums.Action.UnlockConnector)
-    async def on_unlock_connector(self, status=enums.UnlockStatusType.unlocked):
+    async def on_unlock_connector(self, status=enums.UnlockStatusType.unlocked, **kwargs):
         return call_result.UnlockConnectorPayload(status=status)
 
     @on(enums.Action.UnpublishFirmware)
-    async def on_unpublish_firmware(self, status=enums.UnpublishFirmwareStatusType.unpublished):
+    async def on_unpublish_firmware(self, status=enums.UnpublishFirmwareStatusType.unpublished, **kwargs):
         return call_result.UnpublishFirmwarePayload(status=status)
 
     @on(enums.Action.UpdateFirmware)
-    async def on_update_firmware(self, status=enums.UpdateFirmwareStatusType.accepted):
+    async def on_update_firmware(self, status=enums.UpdateFirmwareStatusType.accepted, **kwargs):
         return call_result.UpdateFirmwarePayload(status=status)
 
     messages = {
@@ -649,3 +652,43 @@ class ChargePoint(Cp):
         'Transaction Event': send_transaction_event
 
     }
+
+
+# Part below this line is used to test messages send form central system to charge point
+async def on_connect(websocket, path):
+    """ For every new charge point that connects, create a ChargePoint
+    instance and start listening for messages.
+    """
+    try:
+        requested_protocols = websocket.request_headers[
+            'Sec-WebSocket-Protocol']
+    except KeyError:
+        logging.info("Client hasn't requested any Subprotocol. "
+                 "Closing Connection")
+    if websocket.subprotocol:
+        logging.info("Protocols Matched: %s", websocket.subprotocol)
+    else:
+        # In the websockets lib if no subprotocols are supported by the
+        # client and the server, it proceeds without a subprotocol,
+        # so we have to manually close the connection.
+        logging.warning('Protocols Mismatched | Expected Subprotocols: %s,'
+                        ' but client supports  %s | Closing connection',
+                        websocket.available_subprotocols,
+                        requested_protocols)
+        return await websocket.close()
+
+    charge_point_id = path.strip('/')
+    cp = ChargePoint(charge_point_id, websocket)
+
+    await cp.start()
+
+
+async def start_cp():
+    server = await websockets.serve(
+        on_connect,
+        "0.0.0.0",
+        9000,
+        subprotocols=['ocpp2.0.1']
+    )
+    logging.info("WebSocket Server Started")
+    return server
