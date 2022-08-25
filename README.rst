@@ -5,7 +5,7 @@ OCPP simulator
 Introduction
 ============
 
-This simulator is based on `OCPP<https://github.com/mobilityhouse/ocpp>`_ which is used to simulate a charge point.
+This simulator is based on `OCPP <https://github.com/mobilityhouse/ocpp>`_ which is used to simulate a charge point.
 
 
 Getting Started
