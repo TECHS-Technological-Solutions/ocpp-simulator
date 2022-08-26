@@ -1,8 +1,9 @@
 import uuid
-import typer
 from hashlib import sha256
 from datetime import datetime, timedelta
 import logging
+
+import typer
 import questionary
 import websockets
 
@@ -19,11 +20,12 @@ async def ask_question(enum_type, question: str):
     choices = [limit.value for limit in enum_type]
     answer = await questionary.select(
         question,
-        choices=[choice for choice in choices]
+        choices=list(choices)
     ).ask_async()
     return answer
 
 
+# pylint: disable=too-many-public-methods
 class ChargePoint(Cp):
 
     async def send_boot_notification(self):
@@ -402,25 +404,25 @@ class ChargePoint(Cp):
 
     async def send_security_event_notification(self):
         security_event_type = await ask_question([
-                'FirmwareUpdated',
-                'FailedToAuthenticateAtCsms',
-                'CsmsFailedToAuthenticate',
-                'SettingSystemTime',
-                'StartupOfTheDevice',
-                'ResetOrReboot',
-                'SecurityLogWasCleared',
-                'ReconfigurationOfSecurityParameters',
-                'MemoryExhaustion',
-                'InvalidMessages',
-                'AttemptedReplayAttacks',
-                'TamperDetectionActivated',
-                'InvalidFirmwareSignature',
-                'InvalidFirmwareSigningCertificate',
-                'InvalidCsmsCertificate',
-                'InvalidChargingStationCertificate',
-                'InvalidTLSVersion',
-                'InvalidTLSCipherSuite'
-            ], "Which reservation update status: ")
+            'FirmwareUpdated',
+            'FailedToAuthenticateAtCsms',
+            'CsmsFailedToAuthenticate',
+            'SettingSystemTime',
+            'StartupOfTheDevice',
+            'ResetOrReboot',
+            'SecurityLogWasCleared',
+            'ReconfigurationOfSecurityParameters',
+            'MemoryExhaustion',
+            'InvalidMessages',
+            'AttemptedReplayAttacks',
+            'TamperDetectionActivated',
+            'InvalidFirmwareSignature',
+            'InvalidFirmwareSigningCertificate',
+            'InvalidCsmsCertificate',
+            'InvalidChargingStationCertificate',
+            'InvalidTLSVersion',
+            'InvalidTLSCipherSuite'
+        ], "Which reservation update status: ")
         request = call.SecurityEventNotificationPayload(
             type=security_event_type,
             timestamp=str(datetime.now())
@@ -664,7 +666,7 @@ async def on_connect(websocket, path):
             'Sec-WebSocket-Protocol']
     except KeyError:
         logging.info("Client hasn't requested any Subprotocol. "
-                 "Closing Connection")
+                     "Closing Connection")
     if websocket.subprotocol:
         logging.info("Protocols Matched: %s", websocket.subprotocol)
     else:
@@ -683,7 +685,7 @@ async def on_connect(websocket, path):
     await cp.start()
 
 
-async def start_cp():
+async def start_cp():  # nosec
     server = await websockets.serve(
         on_connect,
         "0.0.0.0",

@@ -1,9 +1,9 @@
+import asyncio
 import typer
 import questionary
 import websockets
-import asyncio
 
-from cp_management import cp as Cp
+from cp_management import cp as Cp  # noqa
 
 app = typer.Typer()
 
@@ -66,7 +66,7 @@ def start():
         while True:
             message = await questionary.select(
                 "What message do you want to send: ",
-                choices=[choice for choice in cp.messages.keys()]
+                choices=list(cp.messages.keys())
             ).ask_async()
 
             await send_message(cp, message)
