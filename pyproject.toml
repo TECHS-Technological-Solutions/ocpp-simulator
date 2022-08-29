@@ -12,9 +12,11 @@ websockets = "^10.3"
 ocpp = "^0.15.0"
 Faker = "^13.15.1"
 factory-boy = "^3.2.1"
+pytest = "^7.1.2"
+pytest-asyncio = "^0.19.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.1.2"
 pytest-cov = "^2.10.1"
 prospector = "^1.7.7"
 bandit = "^1.7.4"
